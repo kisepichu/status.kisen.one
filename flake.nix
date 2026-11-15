@@ -12,16 +12,24 @@
     {
       packages.${system}.default = package;
 
-      checks.${system}.unit = pkgs.runCommand "kisenone-status-unit"
-        {
-          nativeBuildInputs = [ pkgs.python3 ];
-          KISENONE_GEO_JP = package.geoJp;
-          KISENONE_GEO_WORLD = package.geoWorld;
-        } ''
-        cp -r ${./kisenone_status} kisenone_status
-        cp -r ${./tests} tests
-        python3 -m unittest discover -s tests -t . -v
-        touch $out
-      '';
+      nixosModules.default = import ./nix/module.nix self;
+
+      checks.${system} = {
+        unit = pkgs.runCommand "kisenone-status-unit"
+          {
+            nativeBuildInputs = [ pkgs.python3 ];
+            KISENONE_GEO_JP = package.geoJp;
+            KISENONE_GEO_WORLD = package.geoWorld;
+          } ''
+          cp -r ${./kisenone_status} kisenone_status
+          cp -r ${./tests} tests
+          python3 -m unittest discover -s tests -t . -v
+          touch $out
+        '';
+        vm = pkgs.testers.runNixOSTest (import ./nix/vm-test.nix {
+          inherit pkgs;
+          module = self.nixosModules.default;
+        });
+      };
     };
 }
