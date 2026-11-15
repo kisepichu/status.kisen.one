@@ -35,7 +35,7 @@ Dawarich の `GET /api/v1/points` から、最新の 1 点と当日の点を取�
 
 ## コーディング
 
-Wakapi の `GET /api/summary?interval=today` (`Authorization: Bearer <base64(api key)>`)。合計秒数、上位 3 言語と割合 (4 位以下は `other`)、一番長い OS だけを出す。project、branch、machine、editor は捨てる。
+Wakapi の `GET /api/summary?interval=today` (`Authorization: Bearer <base64(api key)>`)。合計秒数、上位 3 言語と割合 (4 位以下は `other`)、一番長い OS だけを出す。project、branch、machine、editor は捨てる。言語・OS の `Unknown` (エディタ以外のツールの heartbeat) は上位と OS の選出から外し、合計と割合の分母には含めて、言語の時間は `other` に入れる。
 
 ## サービス
 

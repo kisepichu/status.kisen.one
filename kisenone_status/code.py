@@ -20,17 +20,21 @@ def _items(summary: dict, key: str) -> list[tuple[str, float]]:
     return sorted((i for i in items if i[1] > 0), key=lambda i: i[1], reverse=True)
 
 
+def _known(items: list[tuple[str, float]]) -> list[tuple[str, float]]:
+    return [i for i in items if i[0].lower() != "unknown"]
+
+
 def code_section(summary: dict, now: float, tz: timezone) -> dict:
     langs = _items(summary, "languages")
     total = sum(t for _, t in langs)
     out_langs: list[list] = []
     if total > 0:
-        top = langs[:TOP_LANGS]
+        top = _known(langs)[:TOP_LANGS]
         out_langs = [[name, round(t / total, 2)] for name, t in top]
         rest = total - sum(t for _, t in top)
         if rest > 0:
             out_langs.append(["other", round(rest / total, 2)])
-    oses = _items(summary, "operating_systems")
+    oses = _known(_items(summary, "operating_systems"))
     return {
         "today_sec": int(total),
         "langs": out_langs,

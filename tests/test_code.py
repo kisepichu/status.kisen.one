@@ -40,6 +40,32 @@ class CodeSectionTest(unittest.TestCase):
         section = code_section({"languages": [], "operating_systems": []}, NOW, JST)
         self.assertEqual((section["today_sec"], section["langs"], section["os"]), (0, [], None))
 
+    def test_unknown_language_is_folded_into_other(self):
+        summary = {
+            "languages": [
+                {"key": "Unknown", "total": 600},
+                {"key": "Nix", "total": 200},
+                {"key": "Go", "total": 100},
+                {"key": "Bash", "total": 50},
+                {"key": "Rust", "total": 50},
+            ]
+        }
+        section = code_section(summary, NOW, JST)
+        self.assertEqual(section["today_sec"], 1000)
+        self.assertEqual(section["langs"], [["Nix", 0.2], ["Go", 0.1], ["Bash", 0.05], ["other", 0.65]])
+
+    def test_only_unknown_language(self):
+        section = code_section({"languages": [{"key": "unknown", "total": 90}]}, NOW, JST)
+        self.assertEqual((section["today_sec"], section["langs"]), (90, [["other", 1.0]]))
+
+    def test_unknown_os_is_skipped(self):
+        summary = {"operating_systems": [{"key": "Unknown", "total": 900}, {"key": "Linux", "total": 100}]}
+        self.assertEqual(code_section(summary, NOW, JST)["os"], "Linux")
+
+    def test_all_unknown_os_is_null(self):
+        summary = {"operating_systems": [{"key": "UNKNOWN", "total": 900}]}
+        self.assertIsNone(code_section(summary, NOW, JST)["os"])
+
 
 class FetchSummaryTest(unittest.TestCase):
     def test_api_key_is_sent_base64_encoded(self):

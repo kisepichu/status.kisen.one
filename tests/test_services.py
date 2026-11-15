@@ -50,6 +50,10 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 self.send_header("Location", "https://127.0.0.1:1/")
             self.end_headers()
             return
+        if self.path == "/needs-ua":
+            self.send_response(403 if self.headers.get("User-Agent", "").startswith("Python-urllib") else 200)
+            self.end_headers()
+            return
         self.send_response(200 if self.path == "/ok" else 404)
         self.end_headers()
 
@@ -84,6 +88,9 @@ class HttpTcpTest(unittest.TestCase):
     def test_http_extra_headers_are_sent(self):
         self.assertFalse(check_http(f"{self.base}/needs-header"))
         self.assertTrue(check_http(f"{self.base}/needs-header", {"X-Forwarded-Proto": "https"}))
+
+    def test_default_user_agent_is_not_python_urllib(self):
+        self.assertTrue(check_http(f"{self.base}/needs-ua"))
 
     def test_tcp(self):
         self.assertTrue(check_tcp(f"127.0.0.1:{self.server.server_port}"))

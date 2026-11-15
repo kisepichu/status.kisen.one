@@ -9,6 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import timezone
 from typing import Callable, Mapping
 
+from .fetch import with_user_agent
 from .timeutil import iso
 
 TIMEOUT_SEC = 5.0
@@ -33,7 +34,7 @@ def check_systemd(unit: str, run: Callable = subprocess.run) -> bool:
 
 
 def check_http(url: str, headers: Mapping[str, str] | None = None) -> bool:
-    req = urllib.request.Request(url, headers=dict(headers or {}))
+    req = urllib.request.Request(url, headers=with_user_agent(headers))
     try:
         with urllib.request.urlopen(req, timeout=TIMEOUT_SEC) as res:
             return res.status < 400
