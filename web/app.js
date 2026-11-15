@@ -140,6 +140,15 @@ function renderServices(list, now) {
   }
 }
 
+// 1 枚の描画が例外を投げても、他のカードを描かせる。
+function safely(render, ...args) {
+  try {
+    render(...args);
+  } catch (e) {
+    console.error(`${render.name} failed`, e);
+  }
+}
+
 async function load() {
   let data;
   try {
@@ -154,10 +163,10 @@ async function load() {
   const now = Date.now();
   setTime($("generated"), data.generated_at, now);
   document.body.classList.toggle("is-stale", age(data.generated_at, now) > STALE_MS);
-  renderHuman(data.human, now);
-  renderLocation(data.location, now);
-  renderCode(data.code, now);
-  renderServices(data.services, now);
+  safely(renderHuman, data.human, now);
+  safely(renderLocation, data.location, now);
+  safely(renderCode, data.code, now);
+  safely(renderServices, data.services, now);
 }
 
 load();

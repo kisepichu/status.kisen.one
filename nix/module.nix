@@ -160,6 +160,15 @@ in
         LoadCredential = lib.optional (cfg.environmentFile != null) "env:${cfg.environmentFile}";
         ProtectSystem = "strict";
         ReadWritePaths = [ stateDir ];
+        TimeoutStartSec = "2min";
+        MemoryMax = "256M";
+        PrivateDevices = true;
+        ProtectKernelTunables = true;
+        ProtectKernelModules = true;
+        ProtectControlGroups = true;
+        RestrictAddressFamilies = [ "AF_UNIX" "AF_INET" "AF_INET6" ];
+        CapabilityBoundingSet = "";
+        SystemCallFilter = [ "@system-service" ];
         ProtectHome = true;
         PrivateTmp = true;
         NoNewPrivileges = true;
