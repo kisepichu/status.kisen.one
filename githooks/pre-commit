@@ -1,0 +1,12 @@
+#!/bin/sh
+# stage した追加行とファイル名を denylist と照らす。
+dir=$(dirname "$0")
+tmp=$(mktemp) || exit 1
+trap 'rm -f "$tmp"' EXIT
+
+{
+	git diff --cached --name-only
+	git diff --cached -U0 --no-color | grep '^+' | grep -v -e '^+++ b/' -e '^+++ /dev/null'
+} >"$tmp"
+
+"$dir/denylist-check" "$tmp" staged

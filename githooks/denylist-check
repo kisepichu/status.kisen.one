@@ -1,0 +1,15 @@
+#!/bin/sh
+# usage: denylist-check <file> <label>
+# denylist の語（1 行 1 語、大文字小文字を区別しない）が file にあれば、<label>:<行番号>: <行> を出して 1 で終わる。
+list=${KISENONE_STATUS_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/kisenone-status}/denylist
+[ -f "$list" ] || exit 0
+
+words=$(tr -d '\r' <"$list" | grep -v -e '^#' -e '^[[:space:]]*$')
+[ -n "$words" ] || exit 0
+
+hits=$(printf '%s\n' "$words" | grep -n -i -F -f - "$1")
+[ -n "$hits" ] || exit 0
+
+printf '%s\n' "$hits" | sed "s|^|$2:|" >&2
+echo "denylist の語が含まれているので止めた ($list)" >&2
+exit 1

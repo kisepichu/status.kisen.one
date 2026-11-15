@@ -1,0 +1,8 @@
+#!/bin/sh
+# commit メッセージ（# で始まる行を除く）を denylist と照らす。
+dir=$(dirname "$0")
+tmp=$(mktemp) || exit 1
+trap 'rm -f "$tmp"' EXIT
+
+grep -v '^#' "$1" >"$tmp"
+"$dir/denylist-check" "$tmp" commit-msg
