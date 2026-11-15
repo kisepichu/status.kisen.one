@@ -32,10 +32,11 @@ Dawarich の `GET /api/v1/points` から、最新の 1 点と当日の点を取�
 - 国: Natural Earth 50m admin-0。コードは `ISO_A2_EH`。`-99` (未承認の地域など) は `null`
 - 今日の移動距離: 当日の点の間の haversine 距離の和。`accuracy` が 100 m を超える点は除く
 - 移動中: 最新の 2 点の間の速度が 15 km/h 以上で、最新の点が 15 分以内
+- 時間帯: Natural Earth 10m の time zones の多角形に最新の点が入るかで、UTC からの差 (分) を `utc_offset_minutes` に入れる。海上などで入らなければ `null`。夏時間は見ない (frontend の現地時刻は、夏時間の間 1 時間ずれる)
 
 ## コーディング
 
-Wakapi の `GET /api/summary?interval=today` (`Authorization: Bearer <base64(api key)>`)。合計秒数、上位 3 言語と割合 (4 位以下は `other`)、一番長い OS だけを出す。project、branch、machine、editor は捨てる。言語・OS の `Unknown` (エディタ以外のツールの heartbeat) は上位と OS の選出から外し、合計と割合の分母には含めて、言語の時間は `other` に入れる。
+Wakapi の `GET /api/summary?interval=today` (`Authorization: Bearer <base64(api key)>`)。合計秒数、上位 3 言語と割合 (4 位以下は `other`)、OS の割合を出す。project、branch、machine、editor は捨てる。言語・OS の `Unknown` (エディタ以外のツールの heartbeat) は上位と OS の選出から外し、言語は合計と割合の分母に含めて時間を `other` に入れる。OS の割合は `Unknown` を除いた合計が分母で、`oses` は空になることがある。
 
 ## サービス
 
@@ -52,7 +53,7 @@ Wakapi の `GET /api/summary?interval=today` (`Authorization: Bearer <base64(api
   "v": 2,
   "generated_at": "2026-11-15T12:00:00+09:00",
   "human": { "state": "computering", "since": "…", "pushed_at": "…", "agents": 2, "ai_ratio_today": 0.62 },
-  "location": { "country": "JP", "pref": "東京都", "moving": false, "today_km": 12.3, "point_at": "…", "at": "…" },
+  "location": { "country": "JP", "pref": "東京都", "utc_offset_minutes": 540, "moving": false, "today_km": 12.3, "point_at": "…", "at": "…" },
   "code": { "today_sec": 11520, "langs": [["Nix", 0.52], ["TypeScript", 0.3], ["Go", 0.1], ["other", 0.08]], "oses": [["Linux", 0.9], ["Darwin", 0.1]], "at": "…" },
   "services": [
     { "name": "blog", "url": "https://…", "up": true, "checked_at": "…" },

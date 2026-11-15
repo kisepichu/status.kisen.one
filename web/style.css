@@ -163,6 +163,6 @@ footer {
 }
 
 .is-error #generated::after {
-  content: " · 取得できない";
+  content: " · unavailable";
   color: var(--down);
 }

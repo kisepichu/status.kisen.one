@@ -7,9 +7,9 @@ kisenone が今何をしているか、どこの都道府県にいるか、今�
 >
 > This is a personal project built only for my own server. It is not intended for reuse: names and labels are hard-coded, and the data sources are fixed. Issues, pull requests, and compatibility are not maintained.
 
-- 今の状態: 手元の作業の補助ツールが `computering` / `delegating` / `reading` / `sleeping` などのカテゴリだけを ssh で送ってくる
-- 位置: [Dawarich](https://dawarich.app) の最新の点から、国と都道府県を手元で判定する。座標は外に出さない
-- コーディング: [Wakapi](https://wakapi.dev) の今日の合計と上位 3 言語。project 名は出さない
+- 今の状態: 手元の作業の補助ツールが `computering` / `delegating` / `reading` / `sleeping` などのカテゴリ、状態になった時刻、動かしているエージェントの数 (省略可) を ssh で送ってくる。`ai_ratio_today` は、当日の `computering` / `delegating` の時間のうち AI が並走していた割合
+- 位置: [Dawarich](https://dawarich.app) の最新の点から、国と都道府県を手元で判定する。座標は外に出さない。`utc_offset_minutes` は時間帯の多角形から出した UTC からの差で、夏時間は見ない
+- コーディング: [Wakapi](https://wakapi.dev) の今日の合計、上位 3 言語、OS (`oses`) の割合。project 名は出さない
 - サービス: systemd / HTTP / TCP で死活を確かめる。個人用のものは名前と状態だけ
 
 データは [`/status.json`](https://status.kisen.one/status.json) にあり、CORS を開けているので他のページからも読める。
@@ -74,7 +74,7 @@ nginx が `127.0.0.1:8087` で listen する。外への公開は reverse proxy 
 ssh -i ~/.ssh/presence kisenone-status@host computering "$(date +%s)"
 ```
 
-受け付けるのは `computering` `delegating` `reading` `chore` `eating` `sleeping` `working` `away` と、7 日以内の epoch 秒だけ。10 分届かなければページは `offline` と出す。
+受け付けるのは `computering` `delegating` `reading` `chore` `eating` `sleeping` `working` `away` と、7 日以内の epoch 秒、省略可の agents (0〜99) だけ。10 分届かなければページは `offline` と出す。
 
 ## 開発
 
@@ -88,3 +88,4 @@ git config core.hooksPath githooks               # ~/.config/kisenone-status/den
 
 - 都道府県の境界: 国土数値情報 (行政区域データ) (国土交通省) を加工して作成 ([smartnews-smri/japan-topography](https://github.com/smartnews-smri/japan-topography) の簡略化版を使用)
 - 国境: [Natural Earth](https://www.naturalearthdata.com/) (public domain)
+- 時間帯: [Natural Earth](https://www.naturalearthdata.com/) の time zones (public domain)

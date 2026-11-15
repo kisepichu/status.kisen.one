@@ -14,7 +14,18 @@ const STATES = {
   offline: ["🌙", "offline"],
 };
 const LANG_COLORS = ["var(--c1)", "var(--c2)", "var(--c3)"];
-const regions = new Intl.DisplayNames(["ja"], { type: "region" });
+const regions = new Intl.DisplayNames(["en"], { type: "region" });
+const OS_NAMES = { Darwin: "macOS", Wsl: "WSL", WSL: "WSL", Windows: "Windows", Linux: "Linux" };
+const PREFS = {
+  北海道: "Hokkaido", 青森県: "Aomori", 岩手県: "Iwate", 宮城県: "Miyagi", 秋田県: "Akita", 山形県: "Yamagata",
+  福島県: "Fukushima", 茨城県: "Ibaraki", 栃木県: "Tochigi", 群馬県: "Gunma", 埼玉県: "Saitama", 千葉県: "Chiba",
+  東京都: "Tokyo", 神奈川県: "Kanagawa", 新潟県: "Niigata", 富山県: "Toyama", 石川県: "Ishikawa", 福井県: "Fukui",
+  山梨県: "Yamanashi", 長野県: "Nagano", 岐阜県: "Gifu", 静岡県: "Shizuoka", 愛知県: "Aichi", 三重県: "Mie",
+  滋賀県: "Shiga", 京都府: "Kyoto", 大阪府: "Osaka", 兵庫県: "Hyogo", 奈良県: "Nara", 和歌山県: "Wakayama",
+  鳥取県: "Tottori", 島根県: "Shimane", 岡山県: "Okayama", 広島県: "Hiroshima", 山口県: "Yamaguchi",
+  徳島県: "Tokushima", 香川県: "Kagawa", 愛媛県: "Ehime", 高知県: "Kochi", 福岡県: "Fukuoka", 佐賀県: "Saga",
+  長崎県: "Nagasaki", 熊本県: "Kumamoto", 大分県: "Oita", 宮崎県: "Miyazaki", 鹿児島県: "Kagoshima", 沖縄県: "Okinawa",
+};
 const $ = (id) => document.getElementById(id);
 
 function age(iso, now) {
@@ -23,17 +34,23 @@ function age(iso, now) {
 
 function ago(iso, now) {
   const m = Math.floor(age(iso, now) / 60000);
-  if (m < 1) return "たった今";
-  if (m < 60) return `${m}分前`;
+  if (m < 1) return "just now";
+  if (m < 60) return `${m}m ago`;
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h}時間前`;
-  return `${Math.floor(h / 24)}日前`;
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
 }
 
 function setTime(el, iso, now) {
   el.dateTime = iso;
   el.textContent = ago(iso, now);
-  el.title = new Date(iso).toLocaleString("ja-JP");
+  el.title = new Date(iso).toLocaleString("en-GB");
+}
+
+// 経過時間 (`for …` 用)
+function elapsed(ms) {
+  const m = Math.max(0, Math.floor(ms / 60000));
+  return m < 60 ? `${m}m` : `${Math.floor(m / 60)}h ${m % 60}m`;
 }
 
 function duration(sec) {
@@ -51,7 +68,7 @@ function markStale(card, at, now) {
   const old = age(at, now) > STALE_MS;
   card.classList.toggle("is-stale", old);
   note.hidden = !old;
-  if (old) note.textContent = `最終取得 ${ago(at, now)}`;
+  if (old) note.textContent = `fetched ${ago(at, now)}`;
 }
 
 function fromTemplate(id) {
@@ -66,10 +83,32 @@ function renderHuman(h, now) {
   const [emoji, label] = STATES[offline ? "offline" : h.state] || STATES.away;
   $("human-emoji").textContent = emoji;
   $("human-state").textContent = label;
-  setTime($("human-since"), offline ? h.pushed_at : h.since, now);
-  const ai = h.delegated_ratio_today;
-  $("human-ai").hidden = ai == null;
-  if (ai != null) $("human-ai-value").textContent = `${Math.round(ai * 100)}%`;
+  const parts = [];
+  if (offline) {
+    parts.push(`last seen ${ago(h.pushed_at, now)}`);
+  } else {
+    parts.push(`for ${elapsed(age(h.since, now))}`);
+    if (h.agents >= 1) parts.push(`🤖 ×${h.agents}`);
+    if (h.ai_ratio_today != null) parts.push(`AI ${Math.round(h.ai_ratio_today * 100)}%`);
+  }
+  $("human-sub").textContent = parts.join(" · ");
+}
+
+function placeName(l) {
+  if (l.country === "JP" && l.pref) return PREFS[l.pref] || l.pref;
+  return l.country ? regions.of(l.country) : "somewhere";
+}
+
+function hours(minutes) {
+  const h = Math.abs(minutes) / 60;
+  const s = Number.isInteger(h) ? `${h}` : h.toFixed(1);
+  return `${minutes < 0 ? "−" : "+"}${s}h`;
+}
+
+function utcLabel(minutes) {
+  const a = Math.abs(minutes);
+  const mm = a % 60;
+  return `UTC${minutes < 0 ? "−" : "+"}${Math.floor(a / 60)}${mm ? `:${String(mm).padStart(2, "0")}` : ""}`;
 }
 
 function renderLocation(l, now) {
@@ -77,11 +116,27 @@ function renderLocation(l, now) {
   card.hidden = !l;
   if (!l) return;
   $("location-flag").textContent = flag(l.country);
-  $("location-place").textContent = l.pref || (l.country ? regions.of(l.country) : "どこか");
+  $("location-place").textContent = placeName(l);
   $("location-moving").hidden = !l.moving;
   $("location-km").textContent = l.today_km.toFixed(1);
   setTime($("location-point"), l.point_at, now);
+  const tz = $("location-time");
+  const off = l.utc_offset_minutes;
+  tz.hidden = off == null;
+  if (off != null) {
+    const local = new Date(now + off * 60000);
+    const hh = String(local.getUTCHours()).padStart(2, "0");
+    const mm = String(local.getUTCMinutes()).padStart(2, "0");
+    let text = `${hh}:${mm} ${utcLabel(off)}`;
+    const diff = -new Date(now).getTimezoneOffset() - off;
+    if (diff !== 0) text += ` · you ${hours(diff)}`;
+    tz.textContent = text;
+  }
   markStale(card, l.at, now);
+}
+
+function osName(name) {
+  return OS_NAMES[name] || name;
 }
 
 function renderCode(c, now) {
@@ -106,7 +161,7 @@ function renderCode(c, now) {
     li.querySelector(".pct").textContent = `${Math.round(ratio * 100)}%`;
     legend.append(li);
   });
-  $("code-os").textContent = c.os ? `on ${c.os}` : "";
+  $("code-os").textContent = c.oses.map(([name, ratio]) => `${osName(name)} ${Math.round(ratio * 100)}%`).join(" · ");
   markStale(card, c.at, now);
 }
 
