@@ -161,6 +161,7 @@ function renderCode(c, now) {
     li.querySelector(".pct").textContent = `${Math.round(ratio * 100)}%`;
     legend.append(li);
   });
+  $("code-os").hidden = c.oses.length === 0;
   $("code-os").textContent = c.oses.map(([name, ratio]) => `${osName(name)} ${Math.round(ratio * 100)}%`).join(" · ");
   markStale(card, c.at, now);
 }
