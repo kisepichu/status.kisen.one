@@ -49,7 +49,7 @@ Wakapi の `GET /api/summary?interval=today` (`Authorization: Bearer <base64(api
 
 ```json
 {
-  "v": 1,
+  "v": 2,
   "generated_at": "2026-11-15T12:00:00+09:00",
   "human": { "state": "computering", "since": "…", "pushed_at": "…", "agents": 2, "ai_ratio_today": 0.62 },
   "location": { "country": "JP", "pref": "東京都", "moving": false, "today_km": 12.3, "point_at": "…", "at": "…" },
