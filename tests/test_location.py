@@ -62,6 +62,9 @@ class FakeGeo:
     def locate(self, lat, lon):
         return "JP", "東京都"
 
+    def utc_offset_minutes(self, lat, lon):
+        return 540
+
 
 class LocationSectionTest(unittest.TestCase):
     def test_outputs_no_coordinates(self):
@@ -72,6 +75,7 @@ class LocationSectionTest(unittest.TestCase):
             {
                 "country": "JP",
                 "pref": "東京都",
+                "utc_offset_minutes": 540,
                 "moving": False,
                 "today_km": 0.0,
                 "point_at": "2026-11-15T11:59:00+09:00",

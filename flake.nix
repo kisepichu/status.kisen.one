@@ -20,6 +20,7 @@
             nativeBuildInputs = [ pkgs.python3 ];
             KISENONE_GEO_JP = package.geoJp;
             KISENONE_GEO_WORLD = package.geoWorld;
+            KISENONE_GEO_TZ = package.geoTz;
           } ''
           cp -r ${./kisenone_status} kisenone_status
           cp -r ${./tests} tests

@@ -12,4 +12,9 @@
     url = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/v5.1.2/geojson/ne_50m_admin_0_countries.geojson";
     hash = "sha256-PkWPwDatCmZBHywebKxJxde/uByxEjvFE7IlEaK3/es=";
   };
+  # Natural Earth 1:10m time zones (public domain)。zone は UTC からの時間
+  geoTz = fetchurl {
+    url = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/v5.1.2/geojson/ne_10m_time_zones.geojson";
+    hash = "sha256-qlKrl+X5Bmk/Mf4uYlyda+eKTnT81BQqcmEjWzVcrP4=";
+  };
 }

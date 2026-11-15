@@ -33,12 +33,26 @@ class GeoIndexTest(unittest.TestCase):
                 feature({"ISO_A2_EH": "-99"}, {"type": "Polygon", "coordinates": [square(100, 0, 110, 10)]}),
             ],
         }
+        tz = {
+            "type": "FeatureCollection",
+            "features": [
+                feature({"zone": 9}, {"type": "Polygon", "coordinates": [square(130, 30, 150, 40)]}),
+                feature({"zone": 5.5}, {"type": "Polygon", "coordinates": [square(70, 20, 80, 30)]}),
+                feature({"zone": None}, {"type": "Polygon", "coordinates": [square(-160, -40, -140, -20)]}),
+            ],
+        }
         jp_path = os.path.join(tmp.name, "jp.json")
         world_path = os.path.join(tmp.name, "world.json")
-        for path, data in [(jp_path, jp), (world_path, world)]:
+        tz_path = os.path.join(tmp.name, "tz.json")
+        for path, data in [(jp_path, jp), (world_path, world), (tz_path, tz)]:
             with open(path, "w", encoding="utf-8") as f:
                 json.dump(data, f)
-        self.geo = GeoIndex(jp_path, world_path)
+        self.geo = GeoIndex(jp_path, world_path, tz_path)
+
+    def test_utc_offset_minutes(self):
+        self.assertEqual(self.geo.utc_offset_minutes(35.5, 139.2), 540)
+        self.assertEqual(self.geo.utc_offset_minutes(25, 75), 330)
+        self.assertIsNone(self.geo.utc_offset_minutes(-30, -150))
 
     def test_point_inside_prefecture(self):
         self.assertEqual(self.geo.locate(35.5, 139.2), ("JP", "A県"))

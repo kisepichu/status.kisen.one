@@ -74,6 +74,7 @@ def location_section(latest: Point | None, today: list[Point], now: float, tz: t
     return {
         "country": country,
         "pref": pref,
+        "utc_offset_minutes": geo.utc_offset_minutes(latest.lat, latest.lon),
         "moving": is_moving(today, now),
         "today_km": round(today_km(today), 1),
         "point_at": iso(latest.t, tz),

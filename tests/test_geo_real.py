@@ -6,13 +6,25 @@ from kisenone_status.geo import GeoIndex
 
 JP = os.environ.get("KISENONE_GEO_JP")
 WORLD = os.environ.get("KISENONE_GEO_WORLD")
+TZ = os.environ.get("KISENONE_GEO_TZ")
 
 
-@unittest.skipUnless(JP and WORLD, "KISENONE_GEO_JP / KISENONE_GEO_WORLD が無い")
+@unittest.skipUnless(JP and WORLD and TZ, "KISENONE_GEO_JP / KISENONE_GEO_WORLD / KISENONE_GEO_TZ が無い")
 class RealBoundaryTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.geo = GeoIndex(JP, WORLD)
+        cls.geo = GeoIndex(JP, WORLD, TZ)
+
+    def test_utc_offsets(self):
+        cases = {
+            "東京": ((35.68, 139.76), 540),
+            "デリー": ((28.61, 77.21), 330),
+            "ホノルル": ((21.3069, -157.8583), -600),
+            "ロンドン": ((51.5, -0.12), 0),
+        }
+        for name, ((lat, lon), minutes) in cases.items():
+            with self.subTest(name=name):
+                self.assertEqual(self.geo.utc_offset_minutes(lat, lon), minutes)
 
     def test_points_near_tokyo_borders(self):
         cases = {

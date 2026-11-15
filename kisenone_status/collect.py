@@ -45,7 +45,7 @@ def build_status(now: float, tz: timezone, prev: dict, sections: dict[str, Calla
     return status
 
 
-def make_sections(cfg: dict, secrets: dict[str, str], now: float, tz: timezone, geo_paths: tuple[str, str]) -> dict[str, Callable[[], object]]:
+def make_sections(cfg: dict, secrets: dict[str, str], now: float, tz: timezone, geo_paths: tuple[str, str, str]) -> dict[str, Callable[[], object]]:
     sections: dict[str, Callable[[], object]] = {
         "human": lambda: human_section(cfg["state_dir"], now, tz),
     }
@@ -74,7 +74,7 @@ def main() -> int:
     prev = read_json(path, {})
     if not isinstance(prev, dict):
         prev = {}
-    geo_paths = (os.environ["KISENONE_GEO_JP"], os.environ["KISENONE_GEO_WORLD"])
+    geo_paths = (os.environ["KISENONE_GEO_JP"], os.environ["KISENONE_GEO_WORLD"], os.environ["KISENONE_GEO_TZ"])
     sections = make_sections(cfg, secrets, now, tz, geo_paths)
     status = build_status(now, tz, prev, sections, lambda m: print(m, file=sys.stderr))
     write_json_atomic(path, status)

@@ -1,7 +1,7 @@
 { lib, stdenvNoCC, python3, fetchurl, makeWrapper }:
 
 let
-  inherit (import ./geodata.nix { inherit fetchurl; }) geoJp geoWorld;
+  inherit (import ./geodata.nix { inherit fetchurl; }) geoJp geoWorld geoTz;
 in
 stdenvNoCC.mkDerivation {
   pname = "kisenone-status";
@@ -24,12 +24,13 @@ stdenvNoCC.mkDerivation {
         --add-flags "-B -m kisenone_status.$cmd" \
         --set PYTHONPATH $out/lib/kisenone-status \
         --set KISENONE_GEO_JP ${geoJp} \
-        --set KISENONE_GEO_WORLD ${geoWorld}
+        --set KISENONE_GEO_WORLD ${geoWorld} \
+        --set KISENONE_GEO_TZ ${geoTz}
     done
     runHook postInstall
   '';
 
-  passthru = { inherit geoJp geoWorld; };
+  passthru = { inherit geoJp geoWorld geoTz; };
 
   meta = {
     description = "status.kisen.one: kisenone の今の状態とサービスの死活を出すページ";

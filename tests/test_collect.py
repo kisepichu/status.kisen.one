@@ -52,7 +52,7 @@ class MakeSectionsTest(unittest.TestCase):
             "wakapi": {"url": "http://127.0.0.1:3000"},
             "services": [{"name": "x", "check": {"type": "tcp", "target": "127.0.0.1:1"}}],
         }
-        sections = make_sections(cfg, {"WAKAPI_API_KEY": "k"}, NOW, JST, ("jp", "world"))
+        sections = make_sections(cfg, {"WAKAPI_API_KEY": "k"}, NOW, JST, ("jp", "world", "tz"))
         self.assertEqual(sorted(sections), ["code", "human", "services"])
 
 

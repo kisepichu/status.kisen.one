@@ -15,7 +15,7 @@ _KM_PER_DEG = 111.32
 
 @dataclass
 class Region:
-    name: str | None
+    name: str | float | None
     bbox: tuple[float, float, float, float]  # min_lon, min_lat, max_lon, max_lat
     polygons: list  # [[outer, hole, ...], ...]。点は [lon, lat]
 
@@ -36,7 +36,7 @@ def _bbox(polygons: list) -> tuple[float, float, float, float]:
     return (min(xs), min(ys), max(xs), max(ys))
 
 
-def load_regions(path: str, name_of: Callable[[dict], str | None]) -> list[Region]:
+def load_regions(path: str, name_of: Callable[[dict], str | float | None]) -> list[Region]:
     with open(path, encoding="utf-8") as f:
         data = json.load(f)
     regions = []
@@ -97,9 +97,18 @@ def _country_code(properties: dict) -> str | None:
 
 
 class GeoIndex:
-    def __init__(self, jp_path: str, world_path: str):
+    def __init__(self, jp_path: str, world_path: str, tz_path: str):
         self.prefectures = load_regions(jp_path, lambda p: p.get("N03_001"))
         self.countries = load_regions(world_path, _country_code)
+        self.zones = load_regions(tz_path, lambda p: p.get("zone"))
+
+    def utc_offset_minutes(self, lat: float, lon: float) -> int | None:
+        """時間帯の多角形から UTC からの差 (分) を出す。夏時間は見ない。"""
+        for region in self.zones:
+            # zone 0 (UTC) は偽値なので is not None で見る
+            if region.name is not None and contains(region, lon, lat):
+                return round(region.name * 60)
+        return None
 
     def locate(self, lat: float, lon: float) -> tuple[str | None, str | None]:
         for region in self.prefectures:
