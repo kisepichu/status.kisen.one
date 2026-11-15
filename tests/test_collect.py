@@ -18,7 +18,7 @@ class BuildStatusTest(unittest.TestCase):
             raise TimeoutError("timed out")
 
         status = build_status(NOW, JST, prev, {"code": broken, "location": lambda: None}, logs.append)
-        self.assertEqual(status["v"], 1)
+        self.assertEqual(status["v"], 2)
         self.assertEqual(status["generated_at"], "2026-11-15T12:00:00+09:00")
         self.assertEqual(status["code"], prev["code"])
         # 取得に成功して「点が無い」になったものは前回の値で埋めない

@@ -19,10 +19,10 @@
 
 `kisenone-status-push` は `SSH_ORIGINAL_COMMAND` を読む。受け付けるのは決まったカテゴリ 8 つと、7 日前より新しく 1 分後より古い epoch 秒だけで、それ以外は exit 1 で何も書かない。鍵には `command="…",restrict` を付けるので、シェルもポート転送も使えない。
 
-- `human.json`: 今の状態、その状態になった時刻、受け取った時刻
-- `human.log`: 受け取った時刻とカテゴリを 1 行ずつ。2 日より古い行は捨てる
+- `human.json`: 今の状態、その状態になった時刻、受け取った時刻、エージェントの数 (省略可)
+- `human.log`: 受け取った時刻・カテゴリ・エージェントの数 (空なら未指定) をタブ区切りで 1 行ずつ。2 日より古い行は捨てる
 
-「AI に任せた時間」は、当日の `delegating` と `computering` の時間の和に対する `delegating` の割合。各行のカテゴリは次の行まで続いたものとし、10 分より長い空白は数えない (PC が止まっていた)。合計が 1 分未満なら出さない。
+「AI の並走時間」は、当日の `delegating` と `computering` の時間の和のうち、`delegating` かエージェントが 1 以上だった時間の割合。各行のカテゴリは次の行まで続いたものとし、10 分より長い空白は数えない (PC が止まっていた)。合計が 1 分未満なら出さない。push は `<category> <since> [<agents 0-99>]`。
 
 ## 位置
 
@@ -51,9 +51,9 @@ Wakapi の `GET /api/summary?interval=today` (`Authorization: Bearer <base64(api
 {
   "v": 1,
   "generated_at": "2026-11-15T12:00:00+09:00",
-  "human": { "state": "computering", "since": "…", "pushed_at": "…", "delegated_ratio_today": 0.62 },
+  "human": { "state": "computering", "since": "…", "pushed_at": "…", "agents": 2, "ai_ratio_today": 0.62 },
   "location": { "country": "JP", "pref": "東京都", "moving": false, "today_km": 12.3, "point_at": "…", "at": "…" },
-  "code": { "today_sec": 11520, "langs": [["Nix", 0.52], ["TypeScript", 0.3], ["Go", 0.1], ["other", 0.08]], "os": "Linux", "at": "…" },
+  "code": { "today_sec": 11520, "langs": [["Nix", 0.52], ["TypeScript", 0.3], ["Go", 0.1], ["other", 0.08]], "oses": [["Linux", 0.9], ["Darwin", 0.1]], "at": "…" },
   "services": [
     { "name": "blog", "url": "https://…", "up": true, "checked_at": "…" },
     { "name": "db", "private": true, "up": true, "checked_at": "…" }

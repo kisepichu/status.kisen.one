@@ -16,7 +16,7 @@ from .location import fetch_points, location_section
 from .services import services_section
 from .timeutil import fixed_tz, iso
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 
 def load_env_file(path: str) -> dict[str, str]:

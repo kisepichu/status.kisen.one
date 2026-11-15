@@ -29,17 +29,25 @@ in
     ssh = "ssh -n -i /root/key -o StrictHostKeyChecking=no -o BatchMode=yes kisenone-status@localhost"
 
     now = machine.succeed("date +%s").strip()
-    machine.succeed(f"{ssh} computering {now} >&2", timeout=30)
+    machine.succeed(f"{ssh} computering {now} 2 >&2", timeout=30)
     # forced command なので、渡したコマンドは実行されず push の入力として拒否される
     machine.fail(f"{ssh} 'touch /tmp/pwned' >&2", timeout=30)
     machine.fail("test -e /tmp/pwned")
     machine.fail(f"{ssh} hacking {now} >&2", timeout=30)
+    machine.fail(f"{ssh} computering {now} 100 >&2", timeout=30)
 
     machine.succeed("systemctl start kisenone-status-collect.service")
     status = json.loads(machine.succeed("curl -sf http://127.0.0.1:8087/status.json"))
     assert status["human"]["state"] == "computering", status
+    assert status["human"]["agents"] == 2, status
     assert {s["name"]: s["up"] for s in status["services"]} == {"sshd": True, "closed": False}, status
     assert "url" not in status["services"][1], status
     machine.succeed("curl -sf http://127.0.0.1:8087/ | grep -q kisenone")
+    # 古い形式 (2 語) の push も通り、agents は null になる
+    machine.succeed(f"{ssh} reading {now} >&2", timeout=30)
+    machine.succeed("systemctl start kisenone-status-collect.service")
+    status = json.loads(machine.succeed("curl -sf http://127.0.0.1:8087/status.json"))
+    assert status["human"]["state"] == "reading", status
+    assert status["human"]["agents"] is None, status
   '';
 }

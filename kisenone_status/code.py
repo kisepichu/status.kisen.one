@@ -35,10 +35,11 @@ def code_section(summary: dict, now: float, tz: timezone) -> dict:
         if rest > 0:
             out_langs.append(["other", round(rest / total, 2)])
     oses = _known(_items(summary, "operating_systems"))
+    os_total = sum(t for _, t in oses)
     return {
         "today_sec": int(total),
         "langs": out_langs,
-        "os": oses[0][0] if oses else None,
+        "oses": [[name, round(t / os_total, 2)] for name, t in oses],
         "at": iso(now, tz),
     }
 

@@ -27,7 +27,7 @@ class CodeSectionTest(unittest.TestCase):
             {
                 "today_sec": 1000,
                 "langs": [["Nix", 0.52], ["TypeScript", 0.3], ["Go", 0.1], ["other", 0.08]],
-                "os": "Linux",
+                "oses": [["Linux", 0.9], ["Darwin", 0.1]],
                 "at": "2026-11-15T12:00:00+09:00",
             },
         )
@@ -38,7 +38,7 @@ class CodeSectionTest(unittest.TestCase):
 
     def test_nothing_today(self):
         section = code_section({"languages": [], "operating_systems": []}, NOW, JST)
-        self.assertEqual((section["today_sec"], section["langs"], section["os"]), (0, [], None))
+        self.assertEqual((section["today_sec"], section["langs"], section["oses"]), (0, [], []))
 
     def test_unknown_language_is_folded_into_other(self):
         summary = {
@@ -58,13 +58,20 @@ class CodeSectionTest(unittest.TestCase):
         section = code_section({"languages": [{"key": "unknown", "total": 90}]}, NOW, JST)
         self.assertEqual((section["today_sec"], section["langs"]), (90, [["other", 1.0]]))
 
-    def test_unknown_os_is_skipped(self):
-        summary = {"operating_systems": [{"key": "Unknown", "total": 900}, {"key": "Linux", "total": 100}]}
-        self.assertEqual(code_section(summary, NOW, JST)["os"], "Linux")
+    def test_unknown_os_is_skipped_and_ratio_excludes_it(self):
+        summary = {
+            "operating_systems": [
+                {"key": "Linux", "total": 900},
+                {"key": "Unknown", "total": 5000},
+                {"key": "Darwin", "total": 100},
+            ]
+        }
+        self.assertEqual(code_section(summary, NOW, JST)["oses"], [["Linux", 0.9], ["Darwin", 0.1]])
 
-    def test_all_unknown_os_is_null(self):
+    def test_all_unknown_os_is_empty(self):
         summary = {"operating_systems": [{"key": "UNKNOWN", "total": 900}]}
-        self.assertIsNone(code_section(summary, NOW, JST)["os"])
+        self.assertEqual(code_section(summary, NOW, JST)["oses"], [])
+        self.assertNotIn("os", code_section(summary, NOW, JST))
 
 
 class FetchSummaryTest(unittest.TestCase):

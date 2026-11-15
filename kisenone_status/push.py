@@ -14,11 +14,11 @@ def main() -> int:
     state_dir = os.environ.get("KISENONE_STATUS_STATE_DIR", STATE_DIR)
     now = time.time()
     try:
-        category, since = parse_push(os.environ.get("SSH_ORIGINAL_COMMAND", ""), now)
+        category, since, agents = parse_push(os.environ.get("SSH_ORIGINAL_COMMAND", ""), now)
     except PushError as e:
         print(f"kisenone-status-push: {e}", file=sys.stderr)
         return 1
-    record_push(state_dir, category, since, now)
+    record_push(state_dir, category, since, now, agents)
     return 0
 
 
