@@ -7,14 +7,16 @@
     let
       system = "x86_64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
-      geodata = import ./nix/geodata.nix { inherit (pkgs) fetchurl; };
+      package = pkgs.callPackage ./nix/package.nix { };
     in
     {
+      packages.${system}.default = package;
+
       checks.${system}.unit = pkgs.runCommand "kisenone-status-unit"
         {
           nativeBuildInputs = [ pkgs.python3 ];
-          KISENONE_GEO_JP = geodata.geoJp;
-          KISENONE_GEO_WORLD = geodata.geoWorld;
+          KISENONE_GEO_JP = package.geoJp;
+          KISENONE_GEO_WORLD = package.geoWorld;
         } ''
         cp -r ${./kisenone_status} kisenone_status
         cp -r ${./tests} tests

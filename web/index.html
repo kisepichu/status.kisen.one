@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>kisenone / status</title>
+  <meta name="description" content="kisenone の今の状態と、動かしているサービス">
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>kisenone</h1>
+      <p class="muted">updated <time id="generated">…</time></p>
+    </header>
+
+    <section class="card now" id="human" hidden>
+      <p class="label">now</p>
+      <p class="state"><span id="human-emoji"></span><span id="human-state"></span></p>
+      <p class="muted">since <time id="human-since"></time><span id="human-ai" hidden> · AI に任せた時間 <b id="human-ai-value"></b></span></p>
+    </section>
+
+    <section class="card" id="location" hidden>
+      <p class="label">where</p>
+      <p class="big"><span id="location-flag"></span> <span id="location-place"></span></p>
+      <p class="muted"><span id="location-moving" hidden>🚃 移動中 · </span>今日 <b id="location-km"></b> km · 最終記録 <time id="location-point"></time></p>
+      <p class="stale muted" hidden></p>
+    </section>
+
+    <section class="card" id="code" hidden>
+      <p class="label">code today</p>
+      <p class="big" id="code-total"></p>
+      <div class="bar" id="code-bar"></div>
+      <ul class="legend" id="code-legend"></ul>
+      <p class="muted" id="code-os"></p>
+      <p class="stale muted" hidden></p>
+    </section>
+
+    <section class="card wide" id="services" hidden>
+      <p class="label">services</p>
+      <ul class="services" id="services-list"></ul>
+    </section>
+
+    <footer class="muted">
+      <span>境界: 国土数値情報 (行政区域データ) (国土交通省) を加工して作成 / Natural Earth</span>
+      <span><a href="status.json">status.json</a> · <a href="https://github.com/kisepichu/status.kisen.one">source</a></span>
+    </footer>
+  </main>
+
+  <template id="tpl-service"><li><span class="dot"></span><span class="name"></span><span class="note muted"></span></li></template>
+  <template id="tpl-lang"><li><span class="swatch"></span><span class="name"></span><span class="muted pct"></span></li></template>
+</body>
+</html>
