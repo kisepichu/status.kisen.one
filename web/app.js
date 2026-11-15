@@ -15,7 +15,8 @@ const STATES = {
 };
 const LANG_COLORS = ["var(--c1)", "var(--c2)", "var(--c3)"];
 const regions = new Intl.DisplayNames(["en"], { type: "region" });
-const OS_NAMES = { Darwin: "macOS", Wsl: "WSL", WSL: "WSL", Windows: "Windows", Linux: "Linux" };
+// Wakapi の OS の key (大文字小文字は送り元しだい) → 表示名
+const OS_NAMES = { darwin: "macOS", macos: "macOS", wsl: "WSL", windows: "Windows", linux: "Linux" };
 const PREFS = {
   北海道: "Hokkaido", 青森県: "Aomori", 岩手県: "Iwate", 宮城県: "Miyagi", 秋田県: "Akita", 山形県: "Yamagata",
   福島県: "Fukushima", 茨城県: "Ibaraki", 栃木県: "Tochigi", 群馬県: "Gunma", 埼玉県: "Saitama", 千葉県: "Chiba",
@@ -136,7 +137,7 @@ function renderLocation(l, now) {
 }
 
 function osName(name) {
-  return OS_NAMES[name] || name;
+  return OS_NAMES[name.toLowerCase()] || name;
 }
 
 function renderCode(c, now) {
