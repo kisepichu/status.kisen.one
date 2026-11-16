@@ -167,6 +167,16 @@ function renderCode(c, now) {
   markStale(card, c.at, now);
 }
 
+// services と machines の 1 行。name は文字列かリンクの要素
+function statusItem(status, name, notes, checkedAt, now) {
+  const li = fromTemplate("tpl-service");
+  li.dataset.status = status;
+  li.querySelector(".name").append(name);
+  li.querySelector(".note").textContent = notes.join(" · ");
+  li.title = `checked ${ago(checkedAt, now)}`;
+  return li;
+}
+
 function renderServices(list, now) {
   const card = $("services");
   card.hidden = !list || list.length === 0;
@@ -174,27 +184,33 @@ function renderServices(list, now) {
   const ul = $("services-list");
   ul.replaceChildren();
   for (const s of list) {
-    const li = fromTemplate("tpl-service");
     const status = s.up ? "up" : s.event_only ? "idle" : "down";
-    li.dataset.status = status;
-    const name = li.querySelector(".name");
+    let name = s.name;
     if (s.url) {
-      const a = document.createElement("a");
-      a.href = s.url;
-      a.rel = "noopener";
-      a.textContent = s.name;
-      name.append(a);
-    } else {
+      name = document.createElement("a");
+      name.href = s.url;
+      name.rel = "noopener";
       name.textContent = s.name;
     }
     const notes = [];
     if (s.private) notes.push("private");
     if (status === "idle") notes.push("event only");
     if (status === "down") notes.push("down");
-    li.querySelector(".note").textContent = notes.join(" · ");
-    li.title = `checked ${ago(s.checked_at, now)}`;
-    ul.append(li);
+    ul.append(statusItem(status, name, notes, s.checked_at, now));
   }
+}
+
+// up が null のマシン (送ってくるマシンが止まっていて分からない) は灰色の unknown
+function renderMachines(list, now) {
+  const card = $("machines");
+  card.hidden = !list || list.length === 0;
+  if (card.hidden) return;
+  $("machines-list").replaceChildren(
+    ...list.map((m) => {
+      const status = m.up === true ? "up" : m.up === false ? "down" : "unknown";
+      return statusItem(status, m.name, status === "up" ? [] : [status], m.checked_at, now);
+    }),
+  );
 }
 
 // 1 枚の描画が例外を投げても、他のカードを描かせる。
@@ -224,6 +240,7 @@ async function load() {
   safely(renderLocation, data.location, now);
   safely(renderCode, data.code, now);
   safely(renderServices, data.services, now);
+  safely(renderMachines, data.machines, now);
 }
 
 load();

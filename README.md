@@ -1,6 +1,6 @@
 # status.kisen.one
 
-kisenone が今何をしているか、どこの都道府県にいるか、今日どれだけコードを書いたか、動かしているサービスが生きているかを出すページ。
+kisenone が今何をしているか、どこの都道府県にいるか、今日どれだけコードを書いたか、動かしているサービスとマシンが生きているかを出すページ。
 
 > [!NOTE]
 > 自分 (kisenone) のサーバーで動かすためだけに作ったもので、ほかの人が使うことは想定していない。名前や表示に kisenone が入っていて、取得元 (Dawarich、Wakapi、状態を送る手元のツール) も決め打ちにしている。issue や PR への対応、互換性の維持もしない。コードは読み物として公開している。
@@ -11,6 +11,7 @@ kisenone が今何をしているか、どこの都道府県にいるか、今�
 - 位置: [Dawarich](https://dawarich.app) の最新の点から、国と都道府県を手元で判定する。座標は外に出さない。`utc_offset_minutes` は時間帯の多角形から出した UTC からの差で、夏時間は見ない
 - コーディング: [Wakapi](https://wakapi.dev) の今日の合計、上位 3 言語、OS (`oses`) の割合。project 名は出さない
 - サービス: systemd / HTTP / TCP で死活を確かめる。個人用のものは名前と状態だけ
+- マシン: サービスと同じ確かめ方か、状態の push で決める。push を送ってくるマシン (`self`) は 10 分届かなければ down、そのマシンが報告する ssh 先 (`remote`) は分からなければ `null`
 
 データは [`/status.json`](https://status.kisen.one/status.json) にあり、CORS を開けているので他のページからも読める。
 
@@ -58,6 +59,11 @@ flowchart LR
               { name = "blog"; url = "https://example.com/"; check = { type = "http"; target = "https://example.com/"; }; }
               { name = "db"; private = true; check = { type = "systemd"; target = "postgresql.service"; }; }
             ];
+            machines = [
+              { name = "nas"; check = { type = "tcp"; target = "192.0.2.10:22"; }; }
+              { name = "desktop"; check = { type = "push"; target = "self"; }; }
+              { name = "laptop"; check = { type = "push"; target = "remote"; }; }
+            ];
           };
         }
       ];
@@ -74,7 +80,7 @@ nginx が `127.0.0.1:8087` で listen する。外への公開は reverse proxy 
 ssh -i ~/.ssh/presence kisenone-status@host computering "$(date +%s)"
 ```
 
-受け付けるのは `computering` `delegating` `reading` `chore` `eating` `sleeping` `working` `away` と、7 日以内の epoch 秒、省略可の agents (0〜99) だけ。10 分届かなければページは `offline` と出す。
+受け付けるのは `computering` `delegating` `reading` `chore` `eating` `sleeping` `working` `away` と、7 日以内の epoch 秒、省略可の agents (0〜99) と remote (`1` / `0`: 送ってくるマシンが ssh 先につながったか) だけ。10 分届かなければページは `offline` と出す。
 
 ## 開発
 

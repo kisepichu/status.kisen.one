@@ -2,7 +2,7 @@
 
 ## 目的
 
-- 人間の今の状態、位置、コーディング、サービスの死活を 1 枚のページで公開する
+- 人間の今の状態、位置、コーディング、サービスとマシンの死活を 1 枚のページで公開する
 - 公開される情報は collector が書く `status.json` 1 つだけにする。丸めと除外はすべて collector で行い、frontend は表示だけを行う
 - 作業の中身 (タスク名、project 名) と座標はページにもデータにも出さない
 - 取得元の 1 つが落ちても、ほかは更新を続ける
@@ -19,10 +19,10 @@
 
 `kisenone-status-push` は `SSH_ORIGINAL_COMMAND` を読む。受け付けるのは決まったカテゴリ 8 つと、7 日前より新しく 1 分後より古い epoch 秒だけで、それ以外は exit 1 で何も書かない。鍵には `command="…",restrict` を付けるので、シェルもポート転送も使えない。
 
-- `human.json`: 今の状態、その状態になった時刻、受け取った時刻、エージェントの数 (省略可)
+- `human.json`: 今の状態、その状態になった時刻、受け取った時刻、エージェントの数と ssh 先につながったか (どちらも省略可)
 - `human.log`: 受け取った時刻・カテゴリ・エージェントの数 (空なら未指定) をタブ区切りで 1 行ずつ。2 日より古い行は捨てる
 
-「AI の並走時間」は、当日の `delegating` と `computering` の時間の和のうち、`delegating` かエージェントが 1 以上だった時間の割合。各行のカテゴリは次の行まで続いたものとし、10 分より長い空白は数えない (PC が止まっていた)。合計が 1 分未満なら出さない。push は `<category> <since> [<agents 0-99>]`。
+「AI の並走時間」は、当日の `delegating` と `computering` の時間の和のうち、`delegating` かエージェントが 1 以上だった時間の割合。各行のカテゴリは次の行まで続いたものとし、10 分より長い空白は数えない (PC が止まっていた)。合計が 1 分未満なら出さない。push は `<category> <since> [<agents 0-99> [<remote 0|1>]]`。`remote` は、送ってくるマシンが直近に ssh 先につながったか (「マシン」の節)。
 
 ## 位置
 
@@ -46,6 +46,15 @@ Wakapi の `GET /api/summary?interval=today` (`Authorization: Bearer <base64(api
 
 並列に確かめる。`private` は名前と状態だけ、`eventOnly` は down のとき灰色で `event only` と出す。
 
+## マシン
+
+サービスと同じ `systemd` / `http` / `tcp` に `push` を足す。名前と状態だけを出す。
+
+- `push` の `self`: 状態を push してくるマシン。最後の push が 10 分 (600 秒) 以内なら up、それ以外 (push が無いときも) は down
+- `push` の `remote`: push してくるマシンが 4 語目で報告する ssh 先。最後の push が 10 分より古いか、4 語目が無ければ `null` (分からない)。frontend は灰色で `unknown` と出す
+
+collector が動いているマシンと、それを載せている host は、落ちるとページが更新されなくなるので down とは出ない。そのときは `status.json` が古くなり、ページ全体が薄くなる。
+
 ## `status.json`
 
 ```json
@@ -58,6 +67,10 @@ Wakapi の `GET /api/summary?interval=today` (`Authorization: Bearer <base64(api
   "services": [
     { "name": "blog", "url": "https://…", "up": true, "checked_at": "…" },
     { "name": "db", "private": true, "up": true, "checked_at": "…" }
+  ],
+  "machines": [
+    { "name": "nas", "up": true, "checked_at": "…" },
+    { "name": "laptop", "up": null, "checked_at": "…" }
   ]
 }
 ```
