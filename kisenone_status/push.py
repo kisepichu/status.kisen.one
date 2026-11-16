@@ -1,4 +1,4 @@
-"""ssh の forced command。SSH_ORIGINAL_COMMAND の「<category> <since>」を記録する。"""
+"""ssh の forced command。SSH_ORIGINAL_COMMAND の「<category> <since> [<agents> [<remote>]]」を記録する。"""
 from __future__ import annotations
 
 import os
@@ -14,11 +14,11 @@ def main() -> int:
     state_dir = os.environ.get("KISENONE_STATUS_STATE_DIR", STATE_DIR)
     now = time.time()
     try:
-        category, since, agents = parse_push(os.environ.get("SSH_ORIGINAL_COMMAND", ""), now)
+        category, since, agents, remote = parse_push(os.environ.get("SSH_ORIGINAL_COMMAND", ""), now)
     except PushError as e:
         print(f"kisenone-status-push: {e}", file=sys.stderr)
         return 1
-    record_push(state_dir, category, since, now, agents)
+    record_push(state_dir, category, since, now, agents, remote)
     return 0
 
 

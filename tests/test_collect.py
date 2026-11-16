@@ -51,9 +51,14 @@ class MakeSectionsTest(unittest.TestCase):
             "dawarich": {"url": "http://127.0.0.1:3001"},
             "wakapi": {"url": "http://127.0.0.1:3000"},
             "services": [{"name": "x", "check": {"type": "tcp", "target": "127.0.0.1:1"}}],
+            "machines": [{"name": "y", "check": {"type": "push", "target": "self"}}],
         }
         sections = make_sections(cfg, {"WAKAPI_API_KEY": "k"}, NOW, JST, ("jp", "world", "tz"))
-        self.assertEqual(sorted(sections), ["code", "human", "services"])
+        self.assertEqual(sorted(sections), ["code", "human", "machines", "services"])
+
+    def test_empty_lists_have_no_section(self):
+        cfg = {"state_dir": "/s", "dawarich": None, "wakapi": None, "services": [], "machines": []}
+        self.assertEqual(sorted(make_sections(cfg, {}, NOW, JST, ("jp", "world", "tz"))), ["human"])
 
 
 if __name__ == "__main__":

@@ -1,10 +1,12 @@
 import http.server
 import socket
+import tempfile
 import threading
 import unittest
 from types import SimpleNamespace
 
-from kisenone_status.services import check_http, check_systemd, check_tcp, services_section
+from kisenone_status.human import record_push
+from kisenone_status.services import check_http, check_systemd, check_tcp, machines_section, services_section
 from kisenone_status.timeutil import fixed_tz
 
 JST = fixed_tz(540)
@@ -114,6 +116,37 @@ class ServicesSectionTest(unittest.TestCase):
                 {"name": "inucon", "up": False, "checked_at": at, "url": "https://i.example/", "event_only": True},
             ],
         )
+
+
+class MachinesSectionTest(unittest.TestCase):
+    def test_push_and_checks_keep_order(self):
+        machines = [
+            {"name": "host", "check": {"type": "tcp", "target": "up"}},
+            {"name": "desktop", "check": {"type": "push", "target": "self"}},
+            {"name": "laptop", "check": {"type": "push", "target": "remote"}},
+            {"name": "vm", "check": {"type": "tcp", "target": "down"}},
+        ]
+        checked = []
+
+        def check_fn(c):
+            checked.append(c["type"])
+            return c["target"] == "up"
+
+        with tempfile.TemporaryDirectory() as d:
+            record_push(d, "computering", NOW - 60, NOW - 60, 1, False)
+            section = machines_section(machines, d, NOW, JST, check_fn=check_fn)
+        at = "2026-11-15T12:00:00+09:00"
+        self.assertEqual(
+            section,
+            [
+                {"name": "host", "up": True, "checked_at": at},
+                {"name": "desktop", "up": True, "checked_at": at},
+                {"name": "laptop", "up": False, "checked_at": at},
+                {"name": "vm", "up": False, "checked_at": at},
+            ],
+        )
+        # push は human.json から決めるので、tcp などの確かめ方には渡さない
+        self.assertEqual(checked, ["tcp", "tcp"])
 
 
 if __name__ == "__main__":

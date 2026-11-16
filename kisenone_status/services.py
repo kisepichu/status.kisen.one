@@ -1,4 +1,4 @@
-"""サービスの死活。systemd / http / tcp の 3 種類。"""
+"""サービスとマシンの死活。systemd / http / tcp と、マシンには push の鮮度も。"""
 from __future__ import annotations
 
 import socket
@@ -10,6 +10,7 @@ from datetime import timezone
 from typing import Callable, Mapping
 
 from .fetch import with_user_agent
+from .human import push_liveness
 from .timeutil import iso
 
 TIMEOUT_SEC = 5.0
@@ -79,3 +80,17 @@ def services_section(services: list[dict], now: float, tz: timezone, check_fn: C
             entry["event_only"] = True
         out.append(entry)
     return out
+
+
+def machines_section(machines: list[dict], state_dir: str, now: float, tz: timezone, check_fn: Callable[[dict], bool] = check) -> list[dict]:
+    # push の self は送ってくるマシン自身、remote はそのマシンが報告する ssh 先
+    self_up, remote_up = push_liveness(state_dir, now)
+    pushed = {"self": self_up, "remote": remote_up}
+
+    def up(spec: dict) -> bool | None:
+        return pushed[spec["target"]] if spec["type"] == "push" else check_fn(spec)
+
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        results = list(pool.map(lambda m: up(m["check"]), machines))
+    checked_at = iso(now, tz)
+    return [{"name": m["name"], "up": result, "checked_at": checked_at} for m, result in zip(machines, results)]

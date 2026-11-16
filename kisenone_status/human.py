@@ -1,4 +1,4 @@
-"""人間の状態: push の入力チェック、human.json と human.log、AI に任せた時間の割合。"""
+"""人間の状態: push の入力チェック、human.json と human.log、AI に任せた時間の割合、push してくるマシンの死活。"""
 from __future__ import annotations
 
 import os
@@ -15,7 +15,10 @@ MAX_FUTURE_SEC = 60
 LOG_KEEP_SEC = 2 * 86400
 # push の間隔 (既定 5 分) の 2 倍。これより長い空白は PC が止まっていたとみなし、数えない
 SAMPLE_GAP_SEC = 600
+# これより push が古ければ、送ってくるマシンは止まっているとみなす (frontend の offline と同じ)
+OFFLINE_SEC = 600
 MAX_AGENTS = 99
+REMOTE_WORDS = {"0": False, "1": True}
 
 
 class PushError(ValueError):
@@ -26,10 +29,10 @@ def _digits(text: str) -> bool:
     return text.isascii() and text.isdigit()
 
 
-def parse_push(command: str, now: float) -> tuple[str, int, int | None]:
+def parse_push(command: str, now: float) -> tuple[str, int, int | None, bool | None]:
     parts = command.split()
-    if len(parts) not in (2, 3):
-        raise PushError("usage: <category> <since-epoch> [<agents>]")
+    if len(parts) not in (2, 3, 4):
+        raise PushError("usage: <category> <since-epoch> [<agents> [<remote 0|1>]]")
     category, since_text = parts[0], parts[1]
     if category not in CATEGORIES:
         raise PushError(f"unknown category: {category}")
@@ -39,11 +42,16 @@ def parse_push(command: str, now: float) -> tuple[str, int, int | None]:
     if not now - MAX_PAST_SEC < since <= now + MAX_FUTURE_SEC:
         raise PushError("since is out of range")
     agents = None
-    if len(parts) == 3:
+    if len(parts) >= 3:
         if not _digits(parts[2]) or int(parts[2]) > MAX_AGENTS:
             raise PushError(f"agents must be 0-{MAX_AGENTS}")
         agents = int(parts[2])
-    return category, since, agents
+    remote = None
+    if len(parts) == 4:
+        if parts[3] not in REMOTE_WORDS:
+            raise PushError("remote must be 0 or 1")
+        remote = REMOTE_WORDS[parts[3]]
+    return category, since, agents, remote
 
 
 def read_samples(path: str) -> list[tuple[int, str, int | None]]:
@@ -63,10 +71,10 @@ def read_samples(path: str) -> list[tuple[int, str, int | None]]:
     return samples
 
 
-def record_push(state_dir: str, category: str, since: int, now: float, agents: int | None) -> None:
+def record_push(state_dir: str, category: str, since: int, now: float, agents: int | None, remote: bool | None) -> None:
     write_json_atomic(
         os.path.join(state_dir, "human.json"),
-        {"state": category, "since": since, "pushed_at": int(now), "agents": agents},
+        {"state": category, "since": since, "pushed_at": int(now), "agents": agents, "remote": remote},
         mode=0o640,
     )
     log = os.path.join(state_dir, "human.log")
@@ -111,3 +119,11 @@ def human_section(state_dir: str, now: float, tz: timezone) -> dict | None:
         "agents": h.get("agents"),
         "ai_ratio_today": ai_ratio(samples, day_start(now, tz), now),
     }
+
+
+def push_liveness(state_dir: str, now: float) -> tuple[bool, bool | None]:
+    """push してくるマシンが動いているかと、そのマシンが最後に報告した「ssh 先につながったか」。"""
+    h = read_json(os.path.join(state_dir, "human.json"))
+    if not isinstance(h, dict) or not isinstance(h.get("pushed_at"), int) or now - h["pushed_at"] > OFFLINE_SEC:
+        return False, None
+    return True, h.get("remote")

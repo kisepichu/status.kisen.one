@@ -13,7 +13,7 @@ from .geo import GeoIndex
 from .human import human_section
 from .jsonio import read_json, write_json_atomic
 from .location import fetch_points, location_section
-from .services import services_section
+from .services import machines_section, services_section
 from .timeutil import fixed_tz, iso
 
 SCHEMA_VERSION = 2
@@ -61,6 +61,8 @@ def make_sections(cfg: dict, secrets: dict[str, str], now: float, tz: timezone, 
         sections["code"] = lambda: code_section(fetch_summary(get_json, wakapi["url"], wakapi_key), now, tz)
     if cfg.get("services"):
         sections["services"] = lambda: services_section(cfg["services"], now, tz)
+    if cfg.get("machines"):
+        sections["machines"] = lambda: machines_section(cfg["machines"], cfg["state_dir"], now, tz)
     return sections
 
 

@@ -7,6 +7,23 @@ let
   stateDir = "/var/lib/kisenone-status";
   publicDir = "${stateDir}/public";
 
+  # services と machines の確かめ方。types は使える type の一覧
+  checkOptions = types: {
+    type = lib.mkOption {
+      type = lib.types.enum types;
+      description = "確かめ方。";
+    };
+    target = lib.mkOption {
+      type = lib.types.str;
+      description = "systemd なら unit 名、http なら URL、tcp なら host:port、push なら self か remote。";
+    };
+    headers = lib.mkOption {
+      type = lib.types.attrsOf lib.types.str;
+      default = { };
+      description = "http のときに足すヘッダ。";
+    };
+  };
+
   serviceType = lib.types.submodule {
     options = {
       name = lib.mkOption {
@@ -28,21 +45,17 @@ let
         default = false;
         description = "開催時だけ動くサービス。down のときは灰色で event only と出す。";
       };
-      check = {
-        type = lib.mkOption {
-          type = lib.types.enum [ "systemd" "http" "tcp" ];
-          description = "確かめ方。";
-        };
-        target = lib.mkOption {
-          type = lib.types.str;
-          description = "systemd なら unit 名、http なら URL、tcp なら host:port。";
-        };
-        headers = lib.mkOption {
-          type = lib.types.attrsOf lib.types.str;
-          default = { };
-          description = "http のときに足すヘッダ。";
-        };
+      check = checkOptions [ "systemd" "http" "tcp" ];
+    };
+  };
+
+  machineType = lib.types.submodule {
+    options = {
+      name = lib.mkOption {
+        type = lib.types.str;
+        description = "表示名。";
       };
+      check = checkOptions [ "systemd" "http" "tcp" "push" ];
     };
   };
 
@@ -57,6 +70,10 @@ let
       event_only = s.eventOnly;
       check = { inherit (s.check) type target headers; };
     }) cfg.services;
+    machines = map (m: {
+      inherit (m) name;
+      check = { inherit (m.check) type target headers; };
+    }) cfg.machines;
   });
 in
 {
@@ -115,6 +132,12 @@ in
       description = "死活を出すサービス。並び順のまま出す。";
     };
 
+    machines = lib.mkOption {
+      type = lib.types.listOf machineType;
+      default = [ ];
+      description = "死活を出すマシン。並び順のまま出す。push の self は push してくるマシン、remote はそのマシンが報告する ssh 先。";
+    };
+
     pushKeys = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [ ];
@@ -127,6 +150,10 @@ in
       {
         assertion = lib.all (s: !(s.private && s.url != null)) cfg.services;
         message = "services.kisenone-status.services: private のサービスに url は付けられない";
+      }
+      {
+        assertion = lib.all (m: m.check.type != "push" || lib.elem m.check.target [ "self" "remote" ]) cfg.machines;
+        message = "services.kisenone-status.machines: push の target は self か remote";
       }
     ];
 
